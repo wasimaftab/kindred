@@ -11,7 +11,8 @@ class CandidateBuilder:
 	:ivar entityCount: Number of entities in each relation (default=2)
 	:ivar acceptedEntityTypes: Tuples of entities that candidate relations must match. Each entity should be the same length as entityCount. None will match all candidate relations.
 	"""
-	def __init__(self,entityCount=2,acceptedEntityTypes=None):
+	#def __init__(self,entityCount=2,acceptedEntityTypes=None):
+	def __init__(self,entityCount=1,acceptedEntityTypes=None):
 		"""
 		Constructor
 
@@ -21,7 +22,8 @@ class CandidateBuilder:
 		:type acceptedEntityTypes: list of tuples
 		"""
 		assert isinstance(entityCount,int)
-		assert entityCount >= 2
+		#assert entityCount >= 2
+		assert entityCount >= 1
 		self.entityCount = entityCount
 
 		assert acceptedEntityTypes is None or isinstance(acceptedEntityTypes,list)
