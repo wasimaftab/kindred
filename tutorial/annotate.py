@@ -8,7 +8,7 @@ if __name__ == '__main__':
     parser.add_argument('--wordlists', required=True, type=str,
                         help='Comma-delimited list of wordlists to load. Will use the basename as the entity name.')
     parser.add_argument('--acceptedEntityTypes', required=True, type=str,
-                        help='Comma-delimited pair within parenthesis.')
+                        help='Comma-delimited pairs for gene-gene interaction type.')
 
     parser.add_argument('--outDir', required=True, type=str, help='Output directory to save annotations to')
 
