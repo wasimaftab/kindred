@@ -3,58 +3,64 @@ import argparse
 import os
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser('Annotate a set of sentences and output the annotation')
-	parser.add_argument('--corpus', required=True, type=str, help='Plain text file containing the text to annotate')
-	parser.add_argument('--wordlists', required=True, type=str, help='Comma-delimited list of wordlists to load. Will use the basename as the entity name.')
-	parser.add_argument('--outDir', required=True, type=str, help='Output directory to save annotations to')
+    parser = argparse.ArgumentParser('Annotate a set of sentences and output the annotation')
+    parser.add_argument('--corpus', required=True, type=str, help='Plain text file containing the text to annotate')
+    parser.add_argument('--wordlists', required=True, type=str,
+                        help='Comma-delimited list of wordlists to load. Will use the basename as the entity name.')
+    parser.add_argument('--acceptedEntityTypes', required=True, type=str,
+                        help='Comma-delimited pair within parenthesis.')
 
-	args = parser.parse_args()
+    parser.add_argument('--outDir', required=True, type=str, help='Output directory to save annotations to')
 
-	print("Setting up output directory")
-	annotatedDir = os.path.join(args.outDir,'annotated_relations')
-	if not os.path.isdir(annotatedDir):
-		os.makedirs(annotatedDir)
-	unannotatedDir = os.path.join(args.outDir,'missing_relations')
-	if not os.path.isdir(unannotatedDir):
-		os.makedirs(unannotatedDir)
+    args = parser.parse_args()
 
-	print("Loading and parsing corpus:")
-	with open(args.corpus) as f:
-		corpus = kindred.Corpus(f.read())
+    print("Setting up output directory")
+    annotatedDir = os.path.join(args.outDir, 'annotated_relations')
+    if not os.path.isdir(annotatedDir):
+        os.makedirs(annotatedDir)
+    unannotatedDir = os.path.join(args.outDir, 'missing_relations')
+    if not os.path.isdir(unannotatedDir):
+        os.makedirs(unannotatedDir)
 
-	parser = kindred.Parser()
-	parser.parse(corpus)
+    print("Loading and parsing corpus:")
+    with open(args.corpus) as f:
+        corpus = kindred.Corpus(f.read())
 
-	print("Splitting the corpus into sentences so that we can save any annotated sentences and don't need to annotate it all")
-	sentenceCorpus = corpus.splitIntoSentences()
+    parser = kindred.Parser()
+    parser.parse(corpus)
 
-	print("Loading wordlists:")
-	wordlistDict = {}
-	for wordlist in args.wordlists.split(','):
-		assert os.path.isfile(wordlist), 'Unable to access file: %s' % wordlist
-		entityType = os.path.splitext(os.path.basename(wordlist))[0]
-		wordlistDict[entityType] = wordlist
-		print("  %s - %s" % (entityType,wordlist))
+    print(
+        "Splitting the corpus into sentences so that we can save any annotated sentences and don't need to annotate it all")
+    sentenceCorpus = corpus.splitIntoSentences()
 
-	assert len(wordlistDict) == 2, "This annotation tool currently only handles two entity relations of different types"
+    print("Loading wordlists:")
+    wordlistDict = {}
 
-	wordlistLookup = kindred.EntityRecognizer.loadWordlists(wordlistDict, idColumn=0, termsColumn=0)
+    wordlist=args.wordlists
+    assert os.path.isfile(wordlist), 'Unable to access file: %s' % wordlist
+    entityType = os.path.splitext(os.path.basename(wordlist))[0]
+    wordlistDict[entityType] = wordlist
 
-	print("Annotating entities in corpus with wordlists")
-	entityRecognizer = kindred.EntityRecognizer(wordlistLookup)
-	entityRecognizer.annotate(sentenceCorpus)
+    wordlistLookup = kindred.EntityRecognizer.loadWordlists(wordlistDict, idColumn=0, termsColumn=0)
 
-	print("Finding all candidate relations")
-	acceptedEntityTypes = wordlistDict
-	candidateBuilder = kindred.CandidateBuilder(entityCount=len(wordlistDict),acceptedEntityTypes = [tuple(sorted(wordlistDict.keys()))])
-	candidateRelations = candidateBuilder.build(sentenceCorpus)
+    print("Annotating entities in corpus with wordlists")
+    entityRecognizer = kindred.EntityRecognizer(wordlistLookup)
+    entityRecognizer.annotate(sentenceCorpus)
 
-	print("Time to through some of the candidate relations and annotate some...")
-	annotatedCorpus,unannotatedCorpus = kindred.manuallyAnnotate(sentenceCorpus,candidateRelations)
 
-	print("\nSaving annotated corpus of %d sentences (with relations that you have just annotated)" % len(annotatedCorpus.documents))
-	kindred.save(annotatedCorpus,'standoff',annotatedDir)
+    print("Finding all candidate relations")
+    acceptedEntityTypes = wordlistDict
 
-	print("Saving unannotated corpus of %d sentences (which you did not review)" % len(unannotatedCorpus.documents))
-	kindred.save(unannotatedCorpus,'standoff',unannotatedDir)
+    candidateBuilder = kindred.CandidateBuilder(entityCount=len(wordlistDict),
+                                                acceptedEntityTypes=[tuple(sorted(wordlistDict.keys()))])
 
+
+    candidateRelations = candidateBuilder.build(sentenceCorpus)
+    print("Time to through some of the candidate relations and annotate some...")
+    annotatedCorpus, unannotatedCorpus = kindred.manuallyAnnotate(sentenceCorpus, candidateRelations)
+    print("\nSaving annotated corpus of %d sentences (with relations that you have just annotated)" % len(
+        annotatedCorpus.documents))
+    kindred.save(annotatedCorpus, 'standoff', annotatedDir)
+
+    print("Saving unannotated corpus of %d sentences (which you did not review)" % len(unannotatedCorpus.documents))
+    kindred.save(unannotatedCorpus, 'standoff', unannotatedDir)
